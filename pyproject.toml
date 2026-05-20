@@ -1,0 +1,23 @@
+[project]
+name = "agentic-video-rework"
+version = "0.1.0"
+description = "Sequential pipeline s parallel a conditional workflow over Claude Agent SDK. Z MP4 zaznamu lekce vyrobi CZ transkript a navrh sestrihu (CORE/GENERAL/BONUS/SKIP)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "claude-agent-sdk>=0.1.53",
+    "anyio>=4.0.0",
+    "faster-whisper>=1.0.3",
+    "scenedetect[opencv]>=0.6.4",
+    "silero-vad>=5.1.2",
+    "ffmpeg-python>=0.2.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.7.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
