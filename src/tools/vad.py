@@ -16,14 +16,22 @@ def detect_speech(
 
     Silence dlouhe nad min_silence_ms jsou kandidati na SKIP (dlouhe pauzy).
     """
-    from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
+    import soundfile as sf
+    import torch
+    from silero_vad import load_silero_vad, get_speech_timestamps
 
     wav_path = Path(wav_path)
     out_json = Path(out_json)
     out_json.parent.mkdir(parents=True, exist_ok=True)
 
+    data, sr = sf.read(str(wav_path), dtype="float32")
+    if sr != 16000:
+        raise ValueError(f"Ocekavam 16kHz WAV, mam {sr}Hz")
+    if data.ndim > 1:
+        data = data.mean(axis=1)
+    audio = torch.from_numpy(data)
+
     model = load_silero_vad()
-    audio = read_audio(str(wav_path), sampling_rate=16000)
     raw_speech = get_speech_timestamps(
         audio, model, sampling_rate=16000, return_seconds=True
     )

@@ -28,7 +28,7 @@ def main() -> int:
         return 1
 
     out_dir = REPO_ROOT / "data" / "output" / sample.stem
-    anyio.run(run_pipeline, sample, out_dir, False, "cuda")
+    anyio.run(run_pipeline, sample, out_dir, False, "auto")
     return 0
 
 

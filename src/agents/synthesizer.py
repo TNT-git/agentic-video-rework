@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 from claude_agent_sdk import (
@@ -78,7 +79,24 @@ async def synthesize_edl(
                 if msg.total_cost_usd:
                     print(f"  [synthesizer] cost: ${msg.total_cost_usd:.4f}")
 
-    parsed = json.loads(_strip_json_fence(raw))
+    stripped = _strip_json_fence(raw)
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError as e:
+        debug = Path("data/output/_debug_synthesizer_raw.txt")
+        debug.parent.mkdir(parents=True, exist_ok=True)
+        debug.write_text(raw or "(prazdna odpoved)", encoding="utf-8")
+        print(f"  [synthesizer] FAIL: neplatny JSON. Raw ulozeno do {debug}")
+        print(f"  [synthesizer] fallback: pouzivam classified segmenty jako EDL")
+        return [
+            {
+                "start": s["start"],
+                "end": s["end"],
+                "tag": s.get("tag", "SKIP"),
+                "reason": s.get("reason", ""),
+            }
+            for s in classified_segments
+        ]
     if not isinstance(parsed, list):
         raise ValueError(f"Synthesizer vratil neocekavany tvar: {type(parsed)}")
     return parsed

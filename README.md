@@ -126,6 +126,65 @@ Volby:
 | `bonus.md` | BONUS odbocky vy-tazene z videa |
 | `cut.mp4` | sestrizene video (jen po potvrzeni v review gate) |
 
+## Ukazka skutecneho behu
+
+30s sample vystrizeny z **Lekce 5 - Claude Agent SDK** (od 30. minuty), spusteno na CPU:
+
+```
+[init] Whisper device: cpu
+============================================================
+SEQUENTIAL WORKFLOW: Video-to-EDL pipeline
+============================================================
+
+[1/6] Extrahuji audio (ffmpeg)...
+  -> data\output\sample_30s\audio.wav
+
+[2/6] Transkribuji (faster-whisper large-v3, CZ)...
+  -> 3 segmentu, 30.0s
+
+[3/6] Paralelni analyza (scene + vad + LLM classifier)...
+  [parallel] scene_detect: start
+  [parallel] vad: start
+  [parallel] classifier (LLM): start
+  [parallel] vad: done (0 silences)
+  [parallel] scene_detect: done (0 scenes)
+  [classifier] cost: $0.0118
+  [parallel] classifier: done (3 classifications)
+
+[4/6] Synthesizer agent (LLM slouci 3 signaly -> EDL)...
+  [synthesizer] cost: $0.0415
+  -> EDL ma 3 segmentu
+
+[5/6] Review gate
+                             Navrh sestrihu (EDL)
+┌────┬─────────┬─────────┬────────┬──────────┬───────────────────────────────┐
+│  # │      Od │      Do │ Trvani │ Tag      │ Duvod                         │
+├────┼─────────┼─────────┼────────┼──────────┼───────────────────────────────┤
+│  1 │    0.00 │   17.10 │  17.10 │ SKIP     │ Organizační poznámka o        │
+│    │         │         │        │          │ dočasné složce a stažení      │
+│    │         │         │        │          │ zdrojáků, žádný obsah.        │
+├────┼─────────┼─────────┼────────┼──────────┼───────────────────────────────┤
+│  2 │   17.10 │   23.00 │   5.90 │ GENERAL  │ Obecný tip: Claude Code k     │
+│    │         │         │        │          │ vysvětlení kódu, platí        │
+│    │         │         │        │          │ univerzálně.                  │
+├────┼─────────┼─────────┼────────┼──────────┼───────────────────────────────┤
+│  3 │   23.00 │   30.02 │   7.02 │ CORE     │ Výklad Claude Agent SDK,      │
+│    │         │         │        │          │ přímo k tématu lekce.         │
+└────┴─────────┴─────────┴────────┴──────────┴───────────────────────────────┘
+
+[6/6] Conditional routing (per-segment) + ffmpeg sestrih...
+  routing: keep=2 bonus=0 skip=1
+  -> data\output\sample_30s\cut.mp4
+
+============================================================
+HOTOVO.
+============================================================
+```
+
+LLM klasifikator spravne rozpoznal 3 odlisne casti: prvni 17s je organizacni preambule (**SKIP**), dalsich 5.9s je obecne pouzitelny tip (**GENERAL**), poslednich 7s je hlavni tema lekce (**CORE**). Conditional routing pak nechal jen GENERAL+CORE → vznikl **cut.mp4 (13s)** se 17s vatou vyhozenou na zacatku.
+
+Celkove naklady na 30s sample: **~$0.05** (Sonnet 4.6) + 0$ za Whisper (lokalne).
+
 ## Tag system
 
 Z `Rework_AI_kurzu/PROJECT_INSTRUCTIONS.md`:

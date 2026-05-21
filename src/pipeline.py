@@ -19,6 +19,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except (AttributeError, OSError):
+        pass
+
 import anyio
 from dotenv import load_dotenv
 
@@ -47,8 +54,15 @@ async def run_pipeline(
     video_path: Path,
     out_dir: Path,
     auto_apply: bool = False,
-    device: str = "cuda",
+    device: str = "auto",
 ) -> None:
+    if device == "auto":
+        try:
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        except ImportError:
+            device = "cpu"
+    print(f"[init] Whisper device: {device}")
     print("=" * 60)
     print("SEQUENTIAL WORKFLOW: Video-to-EDL pipeline")
     print("=" * 60)
@@ -144,7 +158,7 @@ def main() -> int:
         "--out", type=Path, default=None, help="Vystupni adresar (default data/output/<jmeno>)"
     )
     parser.add_argument(
-        "--device", default="cuda", choices=["cuda", "cpu"], help="Whisper device"
+        "--device", default="auto", choices=["auto", "cuda", "cpu"], help="Whisper device (auto detekuje)"
     )
     parser.add_argument(
         "--auto-apply", action="store_true", help="Bez review gate, rovnou sestrihne"
